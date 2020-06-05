@@ -54,7 +54,6 @@ namespace signal
         template <typename S> class receiver_instance;
         template <typename S> class receiver_access;
     }
-    namespace __tags {}    
 
     template <typename S> class receiver_access;
 
