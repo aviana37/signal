@@ -60,7 +60,4 @@ namespace signal
             }
         };
     }
-
-    template <typename ... signals>
-    using emitter = detail::transform<detail::signal_mixin<signals ...>, detail::make_emitter_instance>;
 }

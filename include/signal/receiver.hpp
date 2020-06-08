@@ -140,7 +140,4 @@ namespace signal
              return r->is_slotted();
         }
     };
-
-    template <typename ... signals>
-    using receiver = detail::transform<detail::signal_mixin<signals ...>, detail::make_receiver_instance>;
 }
