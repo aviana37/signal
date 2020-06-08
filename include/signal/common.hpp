@@ -20,8 +20,17 @@ namespace signal
         template <typename __id_tag, typename ... args>
         struct signal_id {
             using signature = signal_signature<args ...>;
-            using slot = std::function<void(args ...)>;
-            using tuple_type = std::tuple<args ...>;
+            using slot      = signature::function_type;
+            using tuple_type = signature::tuple_type;
+
+            template <typename C>
+            static constexpr auto make_slot(void (C::*member_function)(args ...), C* class_ptr) {
+                return [class_ptr, member_function](args ... arr) -> void { return (class_ptr->*member_function)(arr ...); };
+            }
+            template <typename F> requires signature:: template is_match<F>
+            static constexpr auto&& make_slot(F&& callable) {
+                return std::move(callable);
+            }
         };
 
         template <typename _signal, typename F>
