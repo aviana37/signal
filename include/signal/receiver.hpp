@@ -1,143 +1,80 @@
 #pragma once
-#include "common.hpp"
-#include "emitter.hpp"
-#include <deque>
+#include "detail/control.hpp"
 
 namespace signal 
 {
-    namespace detail 
+    template <typename ... signals>
+    class receiver : detail::not_copyable
     {
+    private:
+        template <typename _signal> using instance_t   = detail::make_receiver_instance<_signal>::type;
+        template <typename _signal> using instance_ptr = detail::make_receiver_instance_ptr<_signal>::type;
+        template <typename _signal> using emitter_access = detail::emitter_access<_signal>;
+        using instances = detail::transform<detail::mixin<signals ...>, detail::make_receiver_instance>;
+        instances m_instances;
+
+        template <typename _signal> 
+        constexpr auto  get_instance_ptr() { return static_cast<instance_ptr<_signal>>(&m_instances); }
         template <typename _signal>
-        class receiver_instance 
-        {
-        public:
-            receiver_instance() : m_block{false}, m_slot{}, m_queue{}, m_emitter{nullptr} {}
-            ~receiver_instance() {
-                if(m_emitter) emitter_access<_signal>::disconnect(m_emitter, this);
-            }
+        constexpr auto& get_instance_ref() { return static_cast<instance_t<_signal>&>(m_instances); }
 
-        private:
-            using tuple = typename _signal::tuple_type;
-            using slot  = typename _signal::slot;
-            using emitter_ptr   = emitter_instance<_signal>*;
-            using signal_queue  = std::deque<tuple>;
+    public:
+        receiver() : m_instances{} {}
+        ~receiver() = default;
 
-            bool m_block {false};
-            slot m_slot {};
-            signal_queue m_queue {};
-            emitter_ptr m_emitter {nullptr};
-
-            void flush_queue() {
-                m_queue.clear();
-            }
-
-            template <typename F>
-            requires valid_signature<_signal, F>
-            void set_slot(F&& f) {
-                m_slot = std::move(f);
-            }
-
-            void receive() {
-                if(is_slotted()) {
-                    while(!m_queue.empty()) {
-                        std::apply(m_slot, m_queue.front());
-                        m_queue.pop_front();
-                    }
-                }
-            }
-            void push(tuple&& signal_data) {
-                if(!m_block) {
-                    m_queue.push_back(std::move(signal_data));
-                }
-            }
-
-            void connect(emitter_ptr emitter) {
-                m_emitter = emitter;
-                m_block = false;
-            }
-            void disconnect() {
-                m_emitter = nullptr;
-            }
-            void block() {
-                m_block = true;
-            }
-            void unblock() {
-                m_block = false;
-            }
-
-            emitter_ptr emitter() {
-                return m_emitter;
-            }
-            bool is_connected() {
-                return m_emitter;
-            }
-            bool is_blocked() {
-                return m_block;
-            }
-            bool is_slotted() {
-                return (bool) m_slot;
-            }
-
-            friend class signal::receiver_access<_signal>;
-            friend class detail::receiver_access<_signal>;
-        };
+        template <typename _signal> 
+        operator detail::receiver_access<_signal>() { return { get_instance_ptr<_signal>() }; }
 
         template <typename _signal>
-        struct receiver_access
-        {
-            static void receive(detail::receiver_instance<_signal>* r) {
-                r->receive();
-            }
-            static void push(detail::receiver_instance<_signal>* r, detail::receiver_instance<_signal>::tuple signal_data) {
-                r->push(std::move(signal_data));
-            }
-            template<typename F> requires detail::valid_signature<_signal, F>
-            static void connect(detail::emitter_instance<_signal>* e, detail::receiver_instance<_signal>* r, F&& f) {
-                r->connect(e);
-                r->set_slot(std::move(f));
-                r->flush_queue();
-            }
-            static void disconnect(detail::receiver_instance<_signal>* r) {
-                r->disconnect();
-            }
-            static detail::receiver_instance<_signal>::emitter_ptr emitter(detail::receiver_instance<_signal>* r) {
-                return r->emitter();
-            }
-        };
+        void connect(emitter_access<_signal> emitter) {
+            detail::control<_signal>::connect(emitter.instance, get_instance_ptr<_signal>());
+        }
+        template <typename _signal, typename F> requires detail::valid_signature<_signal, F>
+        void connect(emitter_access<_signal> emitter, F&& slot) {
+            detail::control<_signal>::connect(emitter.instance, get_instance_ptr<_signal>(), std::move(slot));
+        }
+        template <typename _signal, typename T, typename F>
+        void connect(emitter_access<_signal> emitter, F&& member_function, T* class_instance) {
+            connect(emitter, _signal::make_slot(std::move(member_function), class_instance));
+        }
 
         template <typename _signal>
-        struct make_receiver_instance {
-            using type = receiver_instance<_signal>;
-        };
-    }
-
-    template <typename _signal>
-    struct receiver_access 
-    {
-        template<typename F> requires detail::valid_signature<_signal, F>
-        static void set_slot(detail::receiver_instance<_signal>* r, F&& f) {
-            r->set_slot(std::move(f));
+        void disconnect(emitter_access<_signal> emitter) {
+            detail::control<_signal>::disconnect(emitter.instance, get_instance_ptr<_signal>());
+        }
+        template <typename _signal>
+        void disconnect() {
+            detail::control<_signal>::disconnect(get_instance_ptr<_signal>());
         }
 
-        static void flush_queue(detail::receiver_instance<_signal>* r) {
-            r->flush_queue();
+        template <typename _signal>
+        void receive() {
+            detail::control<_signal>::receive(get_instance_ptr<_signal>());
         }
 
-        static void block(detail::receiver_instance<_signal>* r) {
-            r->block();
-        }
-        static void unblock(detail::receiver_instance<_signal>* r) {
-            r->unblock();
-        }
+        template <typename _signal> void block()    { get_instance_ref<_signal>().block();   }
+        template <typename _signal> void unblock()  { get_instance_ref<_signal>().unblock(); }
+        template <typename _signal> void flush()    { get_instance_ref<_signal>().flush();   }
 
-        static bool is_connected(detail::receiver_instance<_signal>* r) {
-            return r->is_connected();
+        template <typename _signal, typename F> requires detail::valid_signature<_signal, F>
+        void set_slot(F&& f) { get_instance_ref<_signal>().set_slot(std::move(f)); }
+
+        template <typename _signal>
+        bool is_connected(emitter_access<_signal> emitter) {
+            return get_instance_ref<_signal>().is_connected(emitter.instance);
         }
-        static bool is_blocked(detail::receiver_instance<_signal>* r) {
-            return r->is_blocked();
+        template <typename _signal>
+        bool is_connected() {
+            return get_instance_ref<_signal>().is_connected();
         }
-        static bool is_slotted(detail::receiver_instance<_signal>* r) {
-             return r->is_slotted();
+        template <typename _signal>
+        bool is_blocked() {
+            return get_instance_ref<_signal>().is_blocked();
+        }
+        template <typename _signal>
+        bool is_slotted() {
+            return get_instance_ref<_signal>().is_slotted();
         }
     };
+
 }
