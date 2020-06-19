@@ -35,7 +35,7 @@ namespace signal
         }
         template <typename _signal, typename T, typename F>
         void connect(receiver_access<_signal> receiver, F&& member_function, T* class_instance) {
-            connect(receiver, _signal::make_slot(std::move(member_function), class_instance));
+            connect(receiver, _signal::__traits::make_slot(std::move(member_function), class_instance));
         }
 
         template <typename _signal>
@@ -48,8 +48,8 @@ namespace signal
         }
 
         template <typename _signal>
-        void emit(typename _signal::tuple_type signal_data) {
-            detail::control<_signal>::emit(get_instance_ptr<_signal>(), signal_data);
+        void emit(typename _signal::__traits::tuple_type&& signal_data) {
+            detail::control<_signal>::emit(get_instance_ptr<_signal>(), std::move(signal_data));
         }
 
         template <typename _signal>

@@ -44,7 +44,7 @@ namespace signal::detail
                 receiver->__disconnect();
         }
 
-        static void emit(detail::emitter_instance<_signal>* emitter, typename _signal::tuple_type signal_data) {
+        static void emit(detail::emitter_instance<_signal>* emitter, auto&& signal_data) {
             //Distribute signal data through emitter's receivers
             for (auto r_ptr : emitter->__receivers()) {
                 r_ptr->__push(signal_data);

@@ -4,14 +4,19 @@
 
 namespace signal 
 {
-    /*!
-    @brief Macro to define an unique signal type alias for a given argument signature
-    @def   declare_signal
-    @since version 1.0.0
-    @warning This macro declares a struct type in the current scope for tag dispatching
-    */
-    #define declare_signal(SIGNAL_NAME, ...) \
-    struct __secret_tag_for_##SIGNAL_NAME {}; \
-    using SIGNAL_NAME = signal::detail::signal_id<__secret_tag_for_##SIGNAL_NAME __VA_OPT__(,) __VA_ARGS__>
+    template <typename tag, typename ... signature>
+    struct id {
+        using __traits = detail::signal_traits<signature ...>;
+    };
 
+    #ifndef declare_signal
+        /*!
+        @brief Declares an unique signal id for a given argument signature
+        @def   declare_signal
+        @since version 1.0.0
+        **/
+        #define declare_signal(NAME, ...) \
+        struct ___secret_tag_for_##NAME {}; \
+        using NAME = signal::id<___secret_tag_for_##NAME __VA_OPT__(,) __VA_ARGS__>
+    #endif
 }

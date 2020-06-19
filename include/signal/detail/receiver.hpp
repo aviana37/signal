@@ -3,7 +3,11 @@
 #include <queue>
 
 
-namespace signal { template <typename ... signals> class receiver; }
+namespace signal 
+{ 
+    template <typename ... signals> 
+    class receiver; 
+}
 
 namespace signal::detail
 {
@@ -18,8 +22,8 @@ namespace signal::detail
         friend class control<_signal>;
         template <typename> friend class signal::receiver;
 
-        using tuple = typename _signal::tuple_type;
-        using slot  = typename _signal::slot;
+        using tuple = typename _signal::__traits::tuple_type;
+        using slot  = typename _signal::__traits::slot_type;
         using emitter_ptr   = emitter_instance<_signal>*;
         using signal_queue  = std::queue<tuple>;
 

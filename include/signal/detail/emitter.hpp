@@ -3,7 +3,11 @@
 #include <forward_list>
 
 
-namespace signal { template <typename ... signals> class emitter; }
+namespace signal 
+{ 
+    template <typename ... signals> 
+    class emitter; 
+}
 
 namespace signal::detail
 {

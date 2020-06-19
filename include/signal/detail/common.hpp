@@ -5,34 +5,26 @@
 namespace signal::detail
 {
     template <typename ... args>
-    struct signal_signature {
-        template <typename F>
-        using is_invocable  = std::is_invocable<F, args ...>;
-        using function_type = std::function<void(args ...)>;
-        using tuple_type    = std::tuple<args ...>;
+    struct signal_traits {
+
+        using slot_type  = std::function<void(args ...)>;
+        using tuple_type = std::tuple<args ...>;
 
         template <typename F>
-        static constexpr bool is_match = is_invocable<F>::value;
-    };
+        static constexpr bool is_match = std::is_invocable<F, args ...>::value;
 
-    template <typename __tag, typename ... args>
-    struct signal_id {
-        using signature = signal_signature<args ...>;
-        using slot      = signature::function_type;
-        using tuple_type = signature::tuple_type;
-
+        template <typename F> requires is_match<F>
+        static constexpr auto&& make_slot(F&& callable) {
+            return std::move(callable);
+        }
         template <typename C>
         static constexpr auto make_slot(void (C::*member_function)(args ...), C* class_ptr) {
             return [class_ptr, member_function](args ... arr) -> void { return (class_ptr->*member_function)(arr ...); };
         }
-        template <typename F> requires signature:: template is_match<F>
-        static constexpr auto&& make_slot(F&& callable) {
-            return std::move(callable);
-        }
     };
 
     template <typename _signal, typename F>
-    concept valid_signature = _signal::signature:: template is_match<F>;
+    concept valid_signature = _signal::__traits:: template is_match<F>;
 
     struct not_copyable {
         not_copyable() = default;
