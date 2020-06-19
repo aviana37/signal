@@ -1,29 +1,41 @@
-# README #
+# Signal - C++20 Signals & Slots #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+Header-only library. Work in progress.
 
-### What is this repository for? ###
+## Hello world! ##
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+```cpp
+#include "signal.hpp"
+#include <iostream>
 
-### How do I get set up? ###
+struct tag{};
+using SayHello = signal::id<tag, std::string>;
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+int main()
+{
+    signal::emitter <SayHello> emitter;
+    signal::receiver<SayHello> receiver;
 
-### Contribution guidelines ###
+    emitter.connect<SayHello>(receiver, 
+        [](std::string name) {
+            std::cout << "Hello " << name << "!\n"; 
+        }
+    );
 
-* Writing tests
-* Code review
-* Other guidelines
+    emitter.emit<SayHello>("world");
+    receiver.receive<SayHello>();
 
-### Who do I talk to? ###
+    return 0;
+}
+```
 
-* Repo owner or admin
-* Other community or team contact
+## v1.0 Milestones ##
++ ~~Base implementation~~
++ Finish documentation
++ Implement tests
++ Patch unnecessary data copies
++ Add multi-threading support
++ Implement move semantics
+
+## Mirrors ##
++ [github](https://github.com/aviana37/signal)
