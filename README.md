@@ -8,8 +8,7 @@ Header-only library. Work in progress.
 #include "signal.hpp"
 #include <iostream>
 
-struct tag{};
-using SayHello = signal::id<tag, std::string>;
+using SayHello = signal::id<std::string>;
 
 int main()
 {
@@ -38,4 +37,5 @@ int main()
 + Implement move semantics
 
 ## Mirrors ##
++ [bitbucket](https://bitbucket.org/aviana37/signal)
 + [github](https://github.com/aviana37/signal)
