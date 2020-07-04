@@ -23,8 +23,8 @@ namespace signal::detail
         }
     };
 
-    template <typename _signal, typename F>
-    concept valid_signature = _signal::__traits:: template is_match<F>;
+    template <typename Signal, typename F>
+    concept valid_signature = Signal::traits:: template is_match<F>;
 
     struct not_copyable {
         not_copyable() = default;
@@ -35,7 +35,8 @@ namespace signal::detail
 
     template <typename ... elems> class signal_list  {};
 
-    template <typename ... instances> class mixin : public instances ... 
+    template <typename ... instances> 
+    class mixin : public instances ... 
     { public: mixin() : instances() ... {} };
 
 
@@ -60,7 +61,9 @@ namespace signal::detail
     using transform = typename transformT<list, meta_function>::type;
 
 
-    template <typename _signal> class control;
-    template <typename _signal> class emitter_instance;
-    template <typename _signal> class receiver_instance;
+    template <typename Signal> class control;
+    template <typename Signal> class emitter_instance;
+    template <typename Signal> class receiver_instance;
+
+    struct tag {};
 }

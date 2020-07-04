@@ -4,59 +4,64 @@
 
 namespace signal::detail
 {
-    template <typename _signal>
+    template <typename Signal>
     class control 
     {
     public:
-        static void connect(emitter_instance<_signal>* emitter, receiver_instance<_signal>* receiver) {
+        template <typename T>
+        static constexpr auto instance_access(T& t) {
+            return t.template get_instance_ptr<Signal>();
+        }
+
+        static void connect(emitter_instance<Signal>* emitter, receiver_instance<Signal>* receiver) {
             //If receiver is already connected, close its current connection
             //then make a new connection between emitter and receiver
 
             if (receiver->is_connected())
-                control<_signal>::disconnect(receiver);
+                control<Signal>::disconnect(receiver);
 
-            emitter->__connect(receiver);
-            receiver->__connect(emitter);
+            emitter->c_connect(receiver);
+            receiver->c_connect(emitter);
         }
-        template <typename F> requires valid_signature<_signal, F>
-        static void connect(emitter_instance<_signal>* emitter, receiver_instance<_signal>* receiver, F&& slot) {
+        template <typename F> requires valid_signature<Signal, F>
+        static void connect(emitter_instance<Signal>* emitter, receiver_instance<Signal>* receiver, F&& slot) {
             //Connect then assign receiver slot
-            control<_signal>::connect(emitter, receiver);
+            control<Signal>::connect(emitter, receiver);
             receiver->set_slot(std::move(slot));
         }
 
-        static void disconnect(detail::emitter_instance<_signal>* emitter) {
+        static void disconnect(detail::emitter_instance<Signal>* emitter) {
             //Disconnect emitter from all receivers
-            const auto& receivers = emitter->__receivers();
-            for (auto r_ptr : receivers) { r_ptr->__disconnect(); }
-            emitter->__disconnect();
+            const auto& receivers = emitter->c_receivers();
+            for (auto r_ptr : receivers) { r_ptr->c_disconnect(); }
+            emitter->c_disconnect();
         }
-        static void disconnect(detail::receiver_instance<_signal>* receiver) {
+        static void disconnect(detail::receiver_instance<Signal>* receiver) {
             //If receiver has a connection, disconnect
             if(receiver->is_connected()) {
-                receiver->__emitter()->__disconnect(receiver);
-                receiver->__disconnect();
+                receiver->c_emitter()->c_disconnect(receiver);
+                receiver->c_disconnect();
             }
         }
-        static void disconnect(detail::emitter_instance<_signal>* emitter, detail::receiver_instance<_signal>* receiver) {
+        static void disconnect(detail::emitter_instance<Signal>* emitter, detail::receiver_instance<Signal>* receiver) {
             //If emitter and receiver are connected, disconnect
-            if (emitter->__disconnect(receiver))
-                receiver->__disconnect();
+            if (emitter->c_disconnect(receiver))
+                receiver->c_disconnect();
         }
 
-        static void emit(detail::emitter_instance<_signal>* emitter, auto&& signal_data) {
+        static void emit(detail::emitter_instance<Signal>* emitter, auto&& signal_data) {
             //Distribute signal data through emitter's receivers
-            for (auto r_ptr : emitter->__receivers()) {
-                r_ptr->__push(signal_data);
+            for (auto r_ptr : emitter->c_receivers()) {
+                r_ptr->c_push(signal_data);
             }
         }
-        static void receive(receiver_instance<_signal>* receiver) {
+        static void receive(receiver_instance<Signal>* receiver) {
             //If slotted feed it data, otherwise flush queue
             if(!receiver->is_slotted()) { receiver->flush(); }
             else {
-                while(!receiver->__queue_empty()) {
-                    std::apply(receiver->__slot(), receiver->__queue_front());
-                    receiver->__pop_queue();
+                while(!receiver->c_queue_empty()) {
+                    std::apply(receiver->c_slot(), receiver->c_queue_front());
+                    receiver->c_pop_queue();
                 }
             }
         }

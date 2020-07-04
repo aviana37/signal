@@ -11,26 +11,26 @@ namespace signal
 
 namespace signal::detail
 {
-    template <typename _signal>
+    template <typename Signal>
     class emitter_instance : not_copyable
     {
     public:
         emitter_instance() : m_receivers{} {}
-        ~emitter_instance() { control<_signal>::disconnect(this); }
+        ~emitter_instance() { control<Signal>::disconnect(this); }
 
     private:
-        friend class control<_signal>;
+        friend class control<Signal>;
         template <typename> friend class signal::emitter;
 
-        using receiver_ptr = receiver_instance<_signal>*;
+        using receiver_ptr = receiver_instance<Signal>*;
         std::forward_list<receiver_ptr> m_receivers;
 
 
         /* control only */
-        void __connect   (receiver_ptr receiver) { m_receivers.push_front(receiver);        }
-        bool __disconnect(receiver_ptr receiver) { return m_receivers.remove(receiver) > 0; }
-        void __disconnect()       { m_receivers.clear(); }
-        const auto& __receivers() { return m_receivers;  }
+        void c_connect   (receiver_ptr receiver) { m_receivers.push_front(receiver);        }
+        bool c_disconnect(receiver_ptr receiver) { return m_receivers.remove(receiver) > 0; }
+        void c_disconnect()       { m_receivers.clear(); }
+        const auto& c_receivers() { return m_receivers;  }
         /* control only */
 
         bool is_connected(receiver_ptr receiver) { 
@@ -38,14 +38,9 @@ namespace signal::detail
         }
 
     };
-    
-    template <typename _signal>
-    struct emitter_access {
-        emitter_instance<_signal>* instance = nullptr;
-    };
 
-    template <typename _signal>
-    struct make_emitter_instance     { using type = emitter_instance<_signal>; };
-    template <typename _signal>
-    struct make_emitter_instance_ptr { using type = emitter_instance<_signal>*; };
+    template <typename Signal>
+    struct make_emitter_instance     { using type = emitter_instance<Signal>; };
+    template <typename Signal>
+    struct make_emitter_instance_ptr { using type = emitter_instance<Signal>*; };
 }
