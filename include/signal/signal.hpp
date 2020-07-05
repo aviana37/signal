@@ -10,6 +10,8 @@ namespace signal
     private: 
         using signal_id = tagged_id<tag, signature ...>;
         using traits = detail::signal_traits<signature ...>;
+        template <typename F>
+        static constexpr bool valid_slot = traits:: template is_match<F>;
 
         template <typename ...> friend class emitter;
         template <typename ...> friend class receiver;

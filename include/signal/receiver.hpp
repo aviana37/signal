@@ -23,22 +23,15 @@ namespace signal
 
         template <typename Signal, typename E>
         void connect(E& emitter) {
-            detail::control<Signal>::connect(detail::control<Signal>::instance_access(emitter), 
+            detail::control<Signal>::connect(
+                detail::control<Signal>::instance_access(emitter), 
                 get_instance_ptr<Signal>());
-        }
-        template <typename Signal, typename E, typename F> requires detail::valid_signature<Signal, F>
-        void connect(E& emitter, F&& slot) {
-            detail::control<Signal>::connect(detail::control<Signal>::instance_access(emitter), 
-                get_instance_ptr<Signal>(), std::move(slot));
-        }
-        template <typename Signal, typename E, typename T, typename F>
-        void connect(E& emitter, F&& member_function, T* class_instance) {
-            connect<Signal>(emitter, Signal::make_slot(std::move(member_function), class_instance));
         }
 
         template <typename Signal, typename E>
         void disconnect(E& emitter) {
-            detail::control<Signal>::disconnect(detail::control<Signal>::instance_access(emitter), 
+            detail::control<Signal>::disconnect(
+                detail::control<Signal>::instance_access(emitter), 
                 get_instance_ptr<Signal>());
         }
         template <typename Signal>
@@ -51,12 +44,18 @@ namespace signal
             detail::control<Signal>::receive(get_instance_ptr<Signal>());
         }
 
+        template <typename Signal, typename F> requires Signal:: template valid_slot<F>
+        void bind(F&& callable) { 
+            get_instance_ptr<Signal>()->set_slot(std::move(callable));     
+        }
+        template <typename Signal, typename T, typename F>
+        void bind(F&& member_function, T* class_instance) {
+            bind<Signal>(Signal::traits::make_slot(std::move(member_function), class_instance));
+        }
+
         template <typename Signal> void block()    { get_instance_ptr<Signal>()->block();   }
         template <typename Signal> void unblock()  { get_instance_ptr<Signal>()->unblock(); }
         template <typename Signal> void flush()    { get_instance_ptr<Signal>()->flush();   }
-
-        template <typename Signal, typename F> requires detail::valid_signature<Signal, F>
-        void set_slot(F&& f) { get_instance_ptr<Signal>()->set_slot(std::move(f)); }
 
         template <typename Signal, typename E>
         bool is_connected(E& emitter) {
@@ -70,10 +69,6 @@ namespace signal
         template <typename Signal>
         bool is_blocked() {
             return get_instance_ptr<Signal>()->is_blocked();
-        }
-        template <typename Signal>
-        bool is_slotted() {
-            return get_instance_ptr<Signal>()->is_slotted();
         }
     };
 

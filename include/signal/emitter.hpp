@@ -23,22 +23,15 @@ namespace signal
 
         template <typename Signal, typename R>
         void connect(R& receiver) {
-            detail::control<Signal>::connect(get_instance_ptr<Signal>(), detail::control<Signal>::instance_access(receiver));
-        }
-        template <typename Signal, typename R, typename F> requires detail::valid_signature<Signal, F>
-        void connect(R& receiver, F&& slot) {
-            detail::control<Signal>::connect(get_instance_ptr<Signal>(), 
-                detail::control<Signal>::instance_access(receiver), 
-                std::move(slot));
-        }
-        template <typename Signal, typename R, typename T, typename F>
-        void connect(R& receiver, F&& member_function, T* class_instance) {
-            connect<Signal>(receiver, Signal::traits::make_slot(std::move(member_function), class_instance));
+            detail::control<Signal>::connect(
+                get_instance_ptr<Signal>(), 
+                detail::control<Signal>::instance_access(receiver));
         }
 
         template <typename Signal, typename R>
         void disconnect(R& receiver) {
-            detail::control<Signal>::disconnect(get_instance_ptr<Signal>(), 
+            detail::control<Signal>::disconnect(
+                get_instance_ptr<Signal>(), 
                 detail::control<Signal>::instance_access(receiver));
         }
         template <typename Signal>
