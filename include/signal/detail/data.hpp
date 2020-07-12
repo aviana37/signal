@@ -1,9 +1,9 @@
 #pragma once
 #include <mutex>
+#include <memory>
 
 namespace signal::detail
 {
-    //to-do Allow user to share unguarded reference data
     template <typename ... types>
     struct unguarded_data {
         std::tuple<std::remove_reference_t<types> ...> tuple;
@@ -29,16 +29,21 @@ namespace signal::detail
     };
 
     template <bool unguarded, typename ... types>
-    struct shared_dataT;
+    struct signal_dataT;
     template <typename ... types>
-    struct shared_dataT<true, types ...> {
+    struct signal_dataT<true, types ...> {
         using type = unguarded_data<types ...>;
     };
     template <typename ... types>
-    struct shared_dataT<false, types ...> {
+    struct signal_dataT<false, types ...> {
         using type = guarded_data<types ...>;
     };
 
     template <typename ... types>
-    using shared_data = typename shared_dataT<read_only<types ...>::value, types ...>::type;
+    using signal_data = typename signal_dataT<read_only<types ...>::value, types ...>::type;
+    template <typename ... types>
+    using unguarded_signal_data = typename signal_dataT<true, types ...>::type;
+
+    template <typename Signal>
+    using shared_data = std::shared_ptr<Signal::traits::data_type>;
 }
