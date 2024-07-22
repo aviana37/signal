@@ -1,5 +1,12 @@
 {
   "image": "mcr.microsoft.com/vscode/devcontainers/cpp:ubuntu-22.04",
   "features": {
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "try/main.cpp"
+      ]
+    }
   }
 }
