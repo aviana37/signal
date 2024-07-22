@@ -1,3 +1,9 @@
+/**
+ *  Select GCC-11 kit or newer
+ *  Build via cli or $: mkdir -p ${CODESPACE_VSCODE_FOLDER}/build && cd ${CODESPACE_VSCODE_FOLDER}/build && cmake ../ && make
+ *  Execute on the terminal $: cd ${CODESPACE_VSCODE_FOLDER}/build/try && ./signal
+ */
+
 #include "signal.hpp"
 #include <iostream>
 
